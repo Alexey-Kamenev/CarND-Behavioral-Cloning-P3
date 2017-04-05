@@ -19,6 +19,12 @@ My project includes the following files:
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
 * writeup_report.md summarizing the results
+* Videos:
+  * video_track1_9mph.mp4 - track 1, default speed (9mph)
+  * video_track1_15mph.mp4 - track 1, 15mph speed
+  * video_track1_30mph_fail.mp4 - track 1, 30 mph speed, demonstrates a failure of the model
+  * video_track2_9mph.mp4 - track 2, default speed (9mph)
+  * video_track2_15mph.mp4 - track 2, 15mph speed
 
 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
