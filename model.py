@@ -76,12 +76,22 @@ def val_generator(data_dir, samples, batch_size=64):
 def create_train_val_gen(base_data_dir, data_dirs, batch_size=64, skip_header=False):
     lines = []
     for d in data_dirs:
-        with open(os.path.join(os.path.join(data_dir, d), 'driving_log.csv')) as f:
-            cur_lines = list(csv.reader(f))
-        if skip_header:
-            cur_lines = cur_lines[1:]
-        lines.extend(cur_lines)
-    train_samples, val_samples = train_test_split(lines, test_size=0.2)
+        base_dir = os.path.join(data_dir, d)
+        with open(os.path.join(base_dir, 'driving_log.csv')) as f:
+            cur_lines = csv.reader(f)
+            if skip_header:
+                next(cur_lines)
+            for line in cur_lines:
+                center_file = os.path.join(base_dir, line[0].strip())
+                left_file   = os.path.join(base_dir, line[1].strip())
+                right_file  = os.path.join(base_dir, line[2].strip())
+                if os.path.exists(center_file) and os.path.exists(left_file) and os.path.exists(right_file):
+                    line[0] = os.path.join(d, line[0].strip())
+                    line[1] = os.path.join(d, line[1].strip())
+                    line[2] = os.path.join(d, line[2].strip())
+                    lines.append(line)
+    # Create train/val split.
+    train_samples, val_samples = train_test_split(lines, test_size=0.05)
     if len(train_samples) % batch_size != 0:
         train_samples = train_samples[:-(len(train_samples) % batch_size)]
     if len(val_samples) % batch_size != 0:
@@ -149,11 +159,11 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint', help='Path to checkpoint file.')
     args = parser.parse_args()
 
-    batch_size = 32
-    num_epochs = 6
+    batch_size = 64
+    num_epochs = 10
     data_dir = '../data/p3/ak'
     #dirs     = ['track1_kb', 'track1_mouse']
-    dirs     = ['track1_kb', 'track1_mouse', 'track2_mouse_center']
+    dirs     = ['track1_kb', 'track1_mouse', 'track2_mouse_center', 'track2_mouse_center_02']
     #dirs     = ['one_lap']
     train_gen, val_gen, train_size, val_size = create_train_val_gen(data_dir, dirs, batch_size=batch_size)
     #data_dir = '../data/p3/data'
@@ -182,4 +192,4 @@ if __name__ == '__main__':
                         nb_epoch=num_epochs, nb_worker=4, pickle_safe=True,
                         callbacks=[checkpointer])
 
-    model.save('model.h5')
+    #model.save('model.h5')
