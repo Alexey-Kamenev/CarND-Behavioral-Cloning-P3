@@ -25,7 +25,8 @@ My project includes the following files:
   * video_track1_30mph_fail.mp4 - track 1, 30 mph speed, demonstrates a failure of the model
   * video_track2_9mph.mp4 - track 2, default speed (9mph)
   * video_track2_15mph.mp4 - track 2, 15mph speed
-
+  Note: the speed was adjusted by changing ```set_speed``` variable in ```drive.py``` file.
+  
 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
 ```sh
