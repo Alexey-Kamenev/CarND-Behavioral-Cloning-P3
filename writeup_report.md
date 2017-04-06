@@ -10,21 +10,22 @@ The goals / steps of this project are the following:
 ## Rubric Points
 Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
 
----
+
 #### Files Submitted & Code Quality
 
 1. Submission includes all required files and can be used to run the simulator in autonomous mode
 My project includes the following files:
-* model.py containing the script to create and train the model
-* drive.py for driving the car in autonomous mode
-* model.h5 containing a trained convolution neural network 
-* writeup_report.md summarizing the results
+* ```model.py``` containing the script to create and train the model
+* ```drive.py``` for driving the car in autonomous mode
+* ```model.h5``` containing a trained convolution neural network 
+* ```writeup_report.md``` summarizing the results
 * Videos:
-  * video_track1_9mph.mp4 - track 1, default speed (9mph)
-  * video_track1_15mph.mp4 - track 1, 15mph speed
-  * video_track1_30mph_fail.mp4 - track 1, 30 mph speed, demonstrates a failure of the model
-  * video_track2_9mph.mp4 - track 2, default speed (9mph)
-  * video_track2_15mph.mp4 - track 2, 15mph speed
+  * ```video_track1_9mph.mp4``` - track 1, default speed (9mph)
+  * ```video_track1_15mph.mp4``` - track 1, 15mph speed
+  * ```video_track1_30mph_fail.mp4``` - track 1, 30 mph speed, demonstrates a failure of the model
+  * ```video_track2_9mph.mp4``` - track 2, default speed (9mph)
+  * ```video_track2_15mph.mp4``` - track 2, 15mph speed
+  * ```disturbances.mp4``` - demonstrates model's ability to recover from disturbances (e.g. sudden turns)
 
   Note: the speed was adjusted by changing ```set_speed``` variable in ```drive.py``` file.
 
@@ -39,37 +40,46 @@ The model.py file contains the code for training and saving the convolution neur
 
 #### Model Architecture and Training Strategy
 
-1. An appropriate model architecture has been employed
+##### 1. An appropriate model architecture has been employed
+
 My model consists of a relatively small convolutional neural network that has 3 convolutional layers, each followed by max pooling laers. Convolutional part (feature extraction) is followed by 2 fully-connected layers. All convolutional and fully-connected layers use ReLU as non-linearity and batch normalization to speed up the training. See lines 115 - 134 in ```model.py``` for more details.
-The reason for such relatively simple model is limitations imposed by the data. The simulator data does not vary much so larger networks easily overfit during the training. I tried training larger network (e.g. ```net_medium_bn``` line 137) and got slightly lower validation error, however, the behavior in simulator was worse than of the simple model: too much oscillations during driving. Such behavior is known very well and especially pronounced when training large networks on simulator. Even in case of real-world systems, like drones, network overfitting is a serious issue which affects model quality, that is, how well model controls the vehicle but not model accuracy (the accuracy can still be high). As an example, this effect can be seen in my work project: [Autonomous Drone Navigation with Deep Learning](https://www.youtube.com/watch?v=voVxIGyeqgo).
+
+The reason for such relatively simple model is limitations imposed by the data. The simulator data does not vary much so larger networks easily overfit during the training. I tried training larger network (e.g. ```net_medium_bn``` line 137 and ResNet-18 which is not shown here to save space) and got slightly lower validation error, however, the behavior in simulator was worse than of the simple model: too much oscillations during driving. Such behavior is known very well and especially pronounced when training large networks on simulator. 
+
+Even in case of real-world systems, like drones, network overfitting is a serious issue which affects model quality, that is, how well model controls the vehicle but not model accuracy (the accuracy can still be high). As an example, this effect can be seen in my work project: [Autonomous Drone Navigation with Deep Learning](https://www.youtube.com/watch?v=voVxIGyeqgo).
+
 The data is cropped and normalized in the model using a Keras lambda layer (code lines 176-177). 
 
-2. Attempts to reduce overfitting in the model
+##### 2. Attempts to reduce overfitting in the model
+
 As the model has batch normalization layers, using other techniques like dropout is not very beneficial. When experimenting with the network I tried adding dropout after each fully-connected layer but that did not improve overall accuracy or quality of the model even after trainig for longer number of iterations as required in case of dropout.
-The model was trained and validated on different data sets to ensure that the model was not overfitting (see generator-related functions like ```train_generator```, ```val_generator``` and ```create_train_val_gen```). I did not use traditional data augmentation techniques like color/contrast/brightnes/etc jitter or rotation and scaling as this does not help much with simulators.
+
+The model was trained and validated on different datasets to ensure that the model was not overfitting (see generator-related functions like ```train_generator```, ```val_generator``` and ```create_train_val_gen```). I did not use traditional data augmentation techniques like color/contrast/brightnes/etc jitter or rotation and scaling as this does not help much with simulators.
 The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
-3. Model parameter tuning
-The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 184). I tried other optimizers like SGD with NAG as well as Adadelta but Adam turned out to be the best.
+##### 3. Model parameter tuning
+The model used an ADAM optimizer, so the learning rate was not tuned manually (model.py line 184). I tried other optimizers like SGD with NAG as well as Adadelta but Adam turned out to be the best.
 
-4. Appropriate training data
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road. I used data from all 3 cameras.
+##### 4. Appropriate training data
+Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road. I used data from all 3 cameras, randomly choosing a camera during the training and applying correction term that I tuned empirically (code lines 46-48).
 For details about how I created the training data, see the next section. 
 
 ### Model Architecture and Training Strategy
-1. Solution Design Approach
+##### 1. Solution Design Approach
 The overall strategy for deriving a model architecture was to start with a simple architecture and small subset of data and increase model size and add data as needed while testing models in simulator.
-From my experience, the biggest problem for creating good model for autonomous navigation (whether car or drone) is that validation set accuracy is not a very good measure of model quality. By "quality" I mean behavior of the vehicle that is controlled by a model. What I often observe is that large model that produce good results on validation or test sets behave less than optimal in real life: the control is "too perfect", for example, the model jerks the vehicle from one side to another. Ideal model would learn how to do an optimal control.
+From my experience, the biggest problem for creating good model for autonomous navigation (whether car or drone) is that validation set accuracy is not a very good measure of model quality. By "quality" I mean behavior of the vehicle that is controlled by a model. What I often observe is that large model that produce good results on validation or test sets behave less than optimal in real life: the control is "too perfect", for example, the model constantly steers the vehicle from one side to another. Ideal model would learn how to do an optimal control.
 
-2. Final Model Architecture
-The model archetecture and the reasoning behind choosing such architecture have been already discussed in previous sections.
+##### 2. Final Model Architecture
+The model archetecture and the reasoning behind choosing such architecture have been already discussed in previous sections. After running the training for 10 epochs, I picked the model from the last epoch. Validation error increased after 4th epoch but such one-time spikes is not uncommon and may not signal overfitting as long as the valdation error keeps decreasing afterwards. So I picked the model right after the second spike in val error which is rather arbitrary and based on my experience with other systems where training the model too long may not change validation error much but still make the model worse (too confident/precise).
 
-3. Creation of the Training Set & Training Process
+##### 3. Creation of the Training Set & Training Process
 I recorded several runs of each of the two tracks. First, I did one full lap for both of the tracks trying to keep the car at the center of the road. I had to use mouse instead of keyboard to enable smoother movements and better steering angle data. Then I recorded recovery segments for both of the tracks where I drive from side to the center. Finally, I repeated the process for each track driving in the opposite direction.
 
 I finally randomly shuffled the data set and put 5% of the data into a validation set. 
 
-Log:
+At the end of the training, I ran the final model on both tracks and different speeds: 9mph, 15mph and 30mph. The model worked well for both tracks on 9mph and 15mph but failed on 30mph speed: the car start oversteering and eventually drives off the track. One possible solution would be to add speed to PID controller and train the network with additional input (speed/throttle) on various speeds.
+
+Training log from Keras:
 ```
 Train size: 25920
 Val size  : 1344
